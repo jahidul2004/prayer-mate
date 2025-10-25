@@ -4,6 +4,7 @@ import Home from "../pages/home/Home";
 import SalahTime from "../pages/salahTime/SalahTime";
 import Quibla from "../pages/qibla/Quibla";
 import Amal from "../pages/amal/Amal";
+import Notifications from "../pages/notifications/Notifications";
 
 const router = createBrowserRouter([
     {
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
             {
                 path: "/amal",
                 element: <Amal></Amal>,
+            },
+            {
+                path: "/notifications",
+                element: <Notifications></Notifications>,
             },
         ],
     },
