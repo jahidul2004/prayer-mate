@@ -16,10 +16,10 @@ export default defineConfig({
                 "apple-touch-icon.png",
             ],
             manifest: {
-                name: "নামাজের সময় অ্যাপ",
-                short_name: "নামাজ অ্যাপ",
+                name: "প্রেয়ার মেট",
+                short_name: "প্রেয়ার মেট",
                 description:
-                    "নামাজের সময়, কিবলা ও দোয়া দেখার জন্য Progressive Web App",
+                    "প্রেয়ার মেট হলো একটি প্রার্থনা অ্যাপ যা আপনাকে আপনার প্রার্থনাগুলো ট্র্যাক করতে এবং স্মরণ করাতে সাহায্য করে।",
                 theme_color: "#bc31d1",
                 background_color: "#ffffff",
                 display: "standalone",
