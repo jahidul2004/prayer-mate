@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
     AlarmClock,
     MapPin,
@@ -7,39 +7,28 @@ import {
     Sun,
     Sunset,
     Moon,
-    Star,
+    Clock,
+    BookOpen,
+    ChevronRight,
     Compass,
     Bell,
     BellOff,
-    BookOpen,
     Heart,
-    ChevronRight,
-    Clock,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Home = () => {
-    const [notificationEnabled, setNotificationEnabled] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
-    // eslint-disable-next-line no-unused-vars
-    const [nextPrayer, setNextPrayer] = useState("ফজর");
+    const [prayerTimes, setPrayerTimes] = useState([]);
+    const [nextPrayer, setNextPrayer] = useState("");
+    const [nextPrayerTime, setNextPrayerTime] = useState("");
+    const [timeRemaining, setTimeRemaining] = useState("");
+    const [hijriDate, setHijriDate] = useState("");
 
-    // Update current time every minute
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 60000);
-        return () => clearInterval(timer);
-    }, []);
+    const latitude = 23.8103;
+    const longitude = 90.4125;
 
-    // Prayer times data (example)
-    const prayerTimes = [
-        { name: "ফজর", time: "৫:১৫ AM", icon: Sunrise, passed: false },
-        { name: "যোহর", time: "১২:১৫ PM", icon: Sun, passed: false },
-        { name: "আসর", time: "৪:৩০ PM", icon: Sun, passed: false },
-        { name: "মাগরিব", time: "৬:০৫ PM", icon: Sunset, passed: false },
-        { name: "ইশা", time: "৭:৩০ PM", icon: Moon, passed: false },
-    ];
-
+    // format date in Bengali
     const formatBengaliDate = (date) => {
         const bengaliMonths = [
             "জানুয়ারি",
@@ -61,9 +50,94 @@ const Home = () => {
         return `${day} ${month}, ${year}`;
     };
 
+    // format 12-hour time
+    const format12Hour = (time) => {
+        const [hour, minute] = time.split(":").map(Number);
+        const date = new Date();
+        date.setHours(hour, minute);
+        return date.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        });
+    };
+
+    // fetch data from Aladhan API
+    useEffect(() => {
+        const fetchPrayerTimes = async () => {
+            try {
+                const res = await fetch(
+                    `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`
+                );
+                const data = await res.json();
+                const timings = data.data.timings;
+                const hijri = data.data.date.hijri;
+
+                setHijriDate(`${hijri.day} ${hijri.month.en}, ${hijri.year}`);
+
+                const formatted = [
+                    { name: "ফজর", time: timings.Fajr, icon: Sunrise },
+                    { name: "যোহর", time: timings.Dhuhr, icon: Sun },
+                    { name: "আসর", time: timings.Asr, icon: Sun },
+                    { name: "মাগরিব", time: timings.Maghrib, icon: Sunset },
+                    { name: "ইশা", time: timings.Isha, icon: Moon },
+                ];
+                setPrayerTimes(formatted);
+            } catch (error) {
+                console.error("Error fetching prayer times:", error);
+            }
+        };
+        fetchPrayerTimes();
+    }, []);
+
+    // Update current time every minute
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // calculate next prayer
+    useEffect(() => {
+        if (prayerTimes.length === 0) return;
+
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        let next = null;
+        for (const prayer of prayerTimes) {
+            const [hour, minute] = prayer.time.split(":").map(Number);
+            const prayerMinutes = hour * 60 + minute;
+            if (prayerMinutes > currentMinutes) {
+                next = prayer;
+                break;
+            }
+        }
+
+        if (!next) {
+            next = prayerTimes[0]; // next day Fajr
+        }
+
+        setNextPrayer(next.name);
+        setNextPrayerTime(format12Hour(next.time));
+
+        const [h, m] = next.time.split(":").map(Number);
+        const nextPrayerDate = new Date();
+        nextPrayerDate.setHours(h, m, 0);
+
+        let diff = (nextPrayerDate - now) / 1000; // seconds
+        if (diff < 0) diff += 24 * 3600; // next day fallback
+
+        const hours = Math.floor(diff / 3600);
+        const minutes = Math.floor((diff % 3600) / 60);
+
+        setTimeRemaining(`${hours} ঘন্টা ${minutes} মিনিট`);
+    }, [prayerTimes, currentTime]);
+
+    const [notificationEnabled, setNotificationEnabled] = useState(true);
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20 pb-6">
-            {/* Hero Section - Today's Overview */}
+            {/* Hero Section */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#bc31d1] to-[#d65de6] rounded-3xl p-6 mb-6 shadow-2xl">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 blur-2xl"></div>
@@ -85,30 +159,30 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Hijri Date */}
-                    <div className="bg-white/15 backdrop-blur-md rounded-2xl p-4 mb-6 border border-white/20">
-                        <div className="text-white/80 text-sm mb-1">
-                            হিজরি তারিখ
-                        </div>
-                        <div className="text-white text-lg font-semibold">
-                            ১৮ রবিউল আউয়াল, ১৪৪৭
-                        </div>
-                    </div>
-
                     {/* Next Prayer */}
-                    <div className="text-center">
+                    <div className="text-center bg-white/15 backdrop-blur-md p-4 rounded-2xl border border-white/20">
                         <div className="text-white/90 text-sm mb-2 flex items-center justify-center gap-2">
                             <Clock className="w-4 h-4" />
                             <span>পরবর্তী নামাজ</span>
                         </div>
                         <div className="text-white text-4xl font-bold mb-2">
-                            {nextPrayer}
+                            {nextPrayer || "লোড হচ্ছে..."}
                         </div>
                         <div className="text-white/90 text-2xl font-semibold mb-3">
-                            ৫:১৫ AM
+                            {nextPrayerTime || "--:--"}
                         </div>
                         <div className="text-white/80 text-sm">
-                            আর ৩ ঘন্টা ২৫ মিনিট বাকি
+                            আর {timeRemaining || "..."} বাকি
+                        </div>
+                    </div>
+
+                    {/* Hijri Date */}
+                    <div className="bg-white/15 backdrop-blur-md rounded-2xl p-4 mt-6 border border-white/20 text-center">
+                        <div className="text-white/80 text-sm mb-1">
+                            হিজরি তারিখ
+                        </div>
+                        <div className="text-white text-lg font-semibold">
+                            {hijriDate || "লোড হচ্ছে..."}
                         </div>
                     </div>
                 </div>
@@ -130,7 +204,7 @@ const Home = () => {
                             <div
                                 key={index}
                                 className={`bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all duration-300 border border-purple-100/50 ${
-                                    index === 0
+                                    prayer.name === nextPrayer
                                         ? "ring-2 ring-[#bc31d1] ring-opacity-50"
                                         : ""
                                 }`}
@@ -139,14 +213,14 @@ const Home = () => {
                                     <div className="flex items-center gap-4">
                                         <div
                                             className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                                                index === 0
+                                                prayer.name === nextPrayer
                                                     ? "bg-gradient-to-br from-[#bc31d1] to-[#d65de6]"
                                                     : "bg-gradient-to-br from-purple-100 to-pink-100"
                                             }`}
                                         >
                                             <Icon
                                                 className={`w-7 h-7 ${
-                                                    index === 0
+                                                    prayer.name === nextPrayer
                                                         ? "text-white"
                                                         : "text-[#bc31d1]"
                                                 }`}
@@ -155,14 +229,14 @@ const Home = () => {
                                         <div>
                                             <div
                                                 className={`text-lg font-bold ${
-                                                    index === 0
+                                                    prayer.name === nextPrayer
                                                         ? "text-[#bc31d1]"
                                                         : "text-gray-800"
                                                 }`}
                                             >
                                                 {prayer.name}
                                             </div>
-                                            {index === 0 && (
+                                            {prayer.name === nextPrayer && (
                                                 <div className="text-xs text-[#bc31d1] font-medium">
                                                     পরবর্তী নামাজ
                                                 </div>
@@ -171,12 +245,12 @@ const Home = () => {
                                     </div>
                                     <div
                                         className={`text-2xl font-bold ${
-                                            index === 0
+                                            prayer.name === nextPrayer
                                                 ? "text-[#bc31d1]"
                                                 : "text-gray-700"
                                         }`}
                                     >
-                                        {prayer.time}
+                                        {format12Hour(prayer.time)}
                                     </div>
                                 </div>
                             </div>
@@ -245,51 +319,13 @@ const Home = () => {
                     </div>
                 </div>
 
-                <button className="w-full bg-gradient-to-r from-[#bc31d1] to-[#d65de6] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                <Link
+                    to="/qibla"
+                    className="w-full bg-gradient-to-r from-[#bc31d1] to-[#d65de6] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                >
                     <span>সম্পূর্ণ কিবলা দেখুন</span>
                     <ChevronRight className="w-5 h-5" />
-                </button>
-            </div>
-
-            {/* Reminder Settings */}
-            <div className="mb-6 bg-white rounded-3xl p-6 shadow-lg border border-purple-100/50">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                                notificationEnabled
-                                    ? "bg-gradient-to-br from-[#bc31d1] to-[#d65de6]"
-                                    : "bg-gray-200"
-                            }`}
-                        >
-                            {notificationEnabled ? (
-                                <Bell className="w-6 h-6 text-white" />
-                            ) : (
-                                <BellOff className="w-6 h-6 text-gray-500" />
-                            )}
-                        </div>
-                        <div>
-                            <div className="font-bold text-gray-800">
-                                আজানের বিজ্ঞপ্তি
-                            </div>
-                            <div className="text-sm text-gray-500">
-                                {notificationEnabled ? "চালু আছে" : "বন্ধ আছে"}
-                            </div>
-                        </div>
-                    </div>
-                    <label className="relative inline-block w-14 h-8 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={notificationEnabled}
-                            onChange={() =>
-                                setNotificationEnabled(!notificationEnabled)
-                            }
-                            className="sr-only peer"
-                        />
-                        <div className="w-14 h-8 bg-gray-300 rounded-full peer peer-checked:bg-gradient-to-r peer-checked:from-[#bc31d1] peer-checked:to-[#d65de6] transition-all duration-300"></div>
-                        <div className="absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-6 shadow-md"></div>
-                    </label>
-                </div>
+                </Link>
             </div>
 
             {/* Daily Islamic Quote */}

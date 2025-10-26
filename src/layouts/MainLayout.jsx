@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
+import logoWhiteTransparent from "../assets/logoWhiteTransparent.png";
 import {
     Home,
     Search,
@@ -30,10 +31,7 @@ const MainLayout = () => {
                     {/* Logo Section */}
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
-                            <Home
-                                className="w-6 h-6 text-white"
-                                strokeWidth={2.5}
-                            />
+                            <img src={logoWhiteTransparent} alt="Logo" />
                         </div>
                         <h1 className="text-white text-xl font-bold tracking-wide">
                             প্রেয়ার মেট
@@ -51,7 +49,10 @@ const MainLayout = () => {
                                 strokeWidth={2.5}
                             />
                         </button>
-                        <Link to={"/notifications"} className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center hover:bg-white/30 transition-all hover:scale-105 relative">
+                        <Link
+                            to={"/notifications"}
+                            className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center hover:bg-white/30 transition-all hover:scale-105 relative"
+                        >
                             <Bell
                                 className="w-5 h-5 text-white"
                                 strokeWidth={2.5}
