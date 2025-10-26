@@ -133,6 +133,7 @@ const Home = () => {
         setTimeRemaining(`${hours} ঘন্টা ${minutes} মিনিট`);
     }, [prayerTimes, currentTime]);
 
+    // eslint-disable-next-line no-unused-vars
     const [notificationEnabled, setNotificationEnabled] = useState(true);
 
     return (
